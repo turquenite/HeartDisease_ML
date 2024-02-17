@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-def train(network: torch.nn.Module, eval_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.CrossEntropyLoss(), plot_loss: bool = False):
+def train(network: torch.nn.Module, eval_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.BCELoss(), plot_loss: bool = False):
     optimizer = optimizer_type(network.parameters(), lr)
 
     epoch_train_losses = list()
