@@ -37,11 +37,11 @@ class HeartDiseaseDataset(Dataset):
         labels = list()
 
         for sample in batch:
-            labels.append(torch.tensor(sample["HeartDisease"]))
-            train_params.append(torch.tensor([sample[att] for att in ["Age", "Sex_num_labels", "ChestPainType_num_labels", "RestingBP", "Cholesterol", "FastingBS", "RestingECG_num_labels", "MaxHR", "ExerciseAngina_num_labels", "Oldpeak", "ST_Slope_num_labels"]]))
+            labels.append(torch.tensor(sample["HeartDisease"], dtype=torch.float32))
+            train_params.append(torch.tensor([sample[att] for att in ["Age", "Sex_num_labels", "ChestPainType_num_labels", "RestingBP", "Cholesterol", "FastingBS", "RestingECG_num_labels", "MaxHR", "ExerciseAngina_num_labels", "Oldpeak", "ST_Slope_num_labels"]], dtype=torch.float32))
             insight_params.append([sample[att] for att in ["Age", "Sex", "ChestPainType", "RestingBP", "Cholesterol", "FastingBS", "RestingECG", "MaxHR", "ExerciseAngina", "Oldpeak", "ST_Slope"]])
 
-        return train_params, insight_params, labels
+        return torch.stack(train_params), insight_params, torch.stack(labels)
     
     def get_data_loaders(self, batch_size: int = 32, shuffle: bool = True, seed: int = 12, split = [0.85, 0.15]):
         train_set, eval_set = torch.utils.data.random_split(self, split, torch.Generator().manual_seed(seed))
