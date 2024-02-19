@@ -1,0 +1,21 @@
+DateTime: 18-02-2024_14;26
+Epochs: 10
+Learning Rate: 0.001
+Optimizer: <class 'torch.optim.adam.Adam'>
+Loss Function: BCELoss()
+Train Losses: [0.645302619934082, 0.5941297197341919, 0.5757135283946991, 0.5551225566864013, 0.5481658565998078, 0.5594426393508911, 0.5758926486968994, 0.5346646332740783, 0.5450609242916107, 0.5407004749774933]
+Test Losses: [0.6168980419635772, 0.5610314607620239, 0.5710632503032684, 0.5963696002960205, 0.5835407972335815, 0.5288883566856384, 0.5939042329788208, 0.6120671153068542, 0.5902885496616364, 0.5730544358491898]
+
+Architecture: 
+SimpleModel(
+  (activation_function): ELU(alpha=1.0)
+  (last_layer_acivation_function): Sigmoid()
+  (linear_1): Linear(in_features=11, out_features=64, bias=True)
+  (linear_2): Linear(in_features=64, out_features=255, bias=True)
+  (linear_3): Linear(in_features=255, out_features=64, bias=True)
+  (linear_4): Linear(in_features=64, out_features=255, bias=True)
+  (linear_5): Linear(in_features=255, out_features=128, bias=True)
+  (linear_6): Linear(in_features=128, out_features=64, bias=True)
+  (linear_7): Linear(in_features=64, out_features=32, bias=True)
+  (linear_8): Linear(in_features=32, out_features=1, bias=True)
+)
