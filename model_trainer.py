@@ -6,11 +6,14 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.BCELoss(), plot_loss: bool = False, save_model: bool = False):
+def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.BCELoss(), plot_loss: bool = False, save_model: bool = False, plot_accuracy: bool = False):
     optimizer = optimizer_type(network.parameters(), lr)
 
     epoch_train_losses = list()
     epoch_test_losses = list()
+    epoch_train_acc = list()
+    epoch_test_acc = list()
+    
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -21,6 +24,8 @@ def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataL
 
         minibatch_training_loss = list()
         minibatch_test_loss = list()
+        minibatch_test_accuraccies = list()
+        minibatch_train_accuraccies = list()
         
         for batch in train_loader:
             network_input, insight_values, targets = batch
@@ -43,7 +48,9 @@ def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataL
             optimizer.zero_grad()
 
             minibatch_training_loss.append(loss.item())
+            minibatch_train_accuraccies.append(np.sum(np.round(output.cpu().detach().numpy()) == targets.cpu().detach().numpy()) / len(targets))
 
+        epoch_train_acc.append(np.mean(minibatch_train_accuraccies))
         epoch_train_losses.append(np.mean(minibatch_training_loss))
 
         network.eval()
@@ -54,13 +61,18 @@ def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataL
             network_input = network_input.to(device)
             targets = targets.to(device)
             output = network(network_input)
+            minibatch_test_accuraccies.append(np.sum(np.round(output.cpu().detach().numpy()) == targets.cpu().detach().numpy()) / len(targets))
             loss = loss_function(output, targets)
             minibatch_test_loss.append(loss.item())
 
         epoch_test_losses.append(np.mean(minibatch_test_loss))
+        epoch_test_acc.append(np.mean(minibatch_test_accuraccies))
 
     if plot_loss:
         plot_losses(epoch_train_losses, epoch_test_losses)
+
+    if plot_accuracy:
+        plot_accuracies(epoch_train_acc, epoch_test_acc)
 
     if save_model:
         scripted_model = torch.jit.script(network)
@@ -89,4 +101,12 @@ def plot_losses(train_losses: list, test_losses: list):
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.legend(["Training Loss", "Test Loss"])
+    plt.show()
+
+def plot_accuracies(train_acc, test_acc: list):
+    plt.title("Model Accuracies")
+    plt.plot(range(len(train_acc)), train_acc, "orange", range(len(test_acc)), test_acc, "dodgerblue")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend(["Training Accuracy", "Test Accuracy"])
     plt.show()
