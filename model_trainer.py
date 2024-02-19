@@ -1,14 +1,16 @@
 import torch
 from tqdm import tqdm
 import numpy as np
+import os
+from datetime import datetime
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-def train(network: torch.nn.Module, eval_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.BCELoss(), plot_loss: bool = False):
+def train(network: torch.nn.Module, test_loader: DataLoader, train_loader: DataLoader, num_epochs: int = 10, lr:float = 0.001, optimizer_type = torch.optim.Adam, loss_function = torch.nn.BCELoss(), plot_loss: bool = False, save_model: bool = False):
     optimizer = optimizer_type(network.parameters(), lr)
 
     epoch_train_losses = list()
-    epoch_eval_losses = list()
+    epoch_test_losses = list()
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -18,7 +20,7 @@ def train(network: torch.nn.Module, eval_loader: DataLoader, train_loader: DataL
         network.train()
 
         minibatch_training_loss = list()
-        minibatch_evaluation_loss = list()
+        minibatch_test_loss = list()
         
         for batch in train_loader:
             network_input, insight_values, targets = batch
@@ -46,26 +48,45 @@ def train(network: torch.nn.Module, eval_loader: DataLoader, train_loader: DataL
 
         network.eval()
 
-        for batch in eval_loader:
+        for batch in test_loader:
             network_input, insight_values, targets = batch
 
             network_input = network_input.to(device)
             targets = targets.to(device)
             output = network(network_input)
             loss = loss_function(output, targets)
-            minibatch_evaluation_loss.append(loss.item())
+            minibatch_test_loss.append(loss.item())
 
-        epoch_eval_losses.append(np.mean(minibatch_evaluation_loss))
+        epoch_test_losses.append(np.mean(minibatch_test_loss))
 
     if plot_loss:
-        plot_losses(epoch_train_losses, epoch_eval_losses)
-        
-    return (epoch_train_losses, epoch_eval_losses)
+        plot_losses(epoch_train_losses, epoch_test_losses)
 
-def plot_losses(train_losses: list, eval_losses: list):
+    if save_model:
+        scripted_model = torch.jit.script(network)
+
+        cur_time = datetime.now().strftime("%d-%m-%Y_%H;%M")
+        folder_path = fr"{os.getcwd()}\models\{cur_time}"
+
+        os.mkdir(folder_path)
+        scripted_model.save(folder_path + r"\model.pt")
+
+        with open(folder_path + r"\metadata.txt", "w") as f:
+            f.write(f"DateTime: {cur_time}\n")
+            f.write(f"Epochs: {num_epochs}\n")
+            f.write(f"Learning Rate: {lr}\n")
+            f.write(f"Optimizer: {optimizer_type}\n")
+            f.write(f"Loss Function: {loss_function}\n")
+            f.write(f"Train Losses: {epoch_train_losses}\n")
+            f.write(f"Test Losses: {epoch_test_losses}\n\n")
+            f.write(f"Architecture: \n{network}")
+
+    return (epoch_train_losses, epoch_test_losses)
+
+def plot_losses(train_losses: list, test_losses: list):
     plt.title("Model-Loss")
-    plt.plot(range(len(train_losses)), train_losses, "orange", range(len(eval_losses)), eval_losses, "dodgerblue")
+    plt.plot(range(len(train_losses)), train_losses, "orange", range(len(test_losses)), test_losses, "dodgerblue")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.legend(["Training Loss", "Evaluation Loss"])
+    plt.legend(["Training Loss", "Test Loss"])
     plt.show()
